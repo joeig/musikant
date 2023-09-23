@@ -198,7 +198,7 @@ func main() {
 
 	mode := flag.String("mode", addMode, fmt.Sprintf("Desired operation: %q or %q", addMode, removeMode))
 	dryRun := flag.Bool("dry-run", false, "Don't make any changes")
-	maxWorkers := flag.Int("max-workers", runtime.NumCPU(), "Maximum number of concurrent requests to GitHub API")
+	maxWorkers := flag.Int("max-workers", runtime.GOMAXPROCS(-1), "Maximum number of concurrent requests to GitHub API")
 
 	flag.Parse()
 
