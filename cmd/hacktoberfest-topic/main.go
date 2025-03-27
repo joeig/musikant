@@ -21,8 +21,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/gofri/go-github-ratelimit/github_ratelimit"
-	"github.com/google/go-github/v55/github"
 	"log"
 	"net/http"
 	"os"
@@ -30,6 +28,9 @@ import (
 	"slices"
 	"strings"
 	"sync"
+
+	"github.com/gofri/go-github-ratelimit/github_ratelimit"
+	"github.com/google/go-github/v55/github"
 )
 
 type AppContext struct {
