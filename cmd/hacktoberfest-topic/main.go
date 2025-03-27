@@ -1,4 +1,4 @@
-// Musikant (German word for *musician*) adds the `hacktoberfest` topic to all of your public GitHub repositories,
+// hacktoberfest-topic adds the `hacktoberfest` topic to all of your public GitHub repositories,
 // excluding forks and archived repositories.
 //
 // You have to provide an environment variable called `GITHUB_TOKEN` which contains
@@ -43,7 +43,7 @@ type AppContext struct {
 	affectedTopic   string
 }
 
-func (a *AppContext) getRepos() (allRepos []*github.Repository) {
+func (a *AppContext) getRepos(ctx context.Context) (allRepos []*github.Repository) {
 	opt := &github.RepositoryListOptions{
 		Visibility:  "public",
 		Affiliation: "owner",
@@ -51,7 +51,7 @@ func (a *AppContext) getRepos() (allRepos []*github.Repository) {
 	}
 
 	for i := 0; i < a.maxPages; i++ {
-		repos, resp, err := a.gitHub.Repositories.List(context.Background(), "", opt)
+		repos, resp, err := a.gitHub.Repositories.List(ctx, "", opt)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -86,7 +86,7 @@ func (a *AppContext) getRepos() (allRepos []*github.Repository) {
 	return
 }
 
-func (a *AppContext) updateTopicsOfRepos(repos []*github.Repository) {
+func (a *AppContext) updateTopicsOfRepos(ctx context.Context, repos []*github.Repository) {
 	jobs := make(chan *github.Repository, len(repos))
 	var wg sync.WaitGroup
 
@@ -97,7 +97,7 @@ func (a *AppContext) updateTopicsOfRepos(repos []*github.Repository) {
 			defer wg.Done()
 
 			for repo := range jobs {
-				a.updateTopicsOfRepo(repo)
+				a.updateTopicsOfRepo(ctx, repo)
 			}
 		}(jobs)
 	}
@@ -110,7 +110,7 @@ func (a *AppContext) updateTopicsOfRepos(repos []*github.Repository) {
 	wg.Wait()
 }
 
-func (a *AppContext) updateTopicsOfRepo(repo *github.Repository) {
+func (a *AppContext) updateTopicsOfRepo(ctx context.Context, repo *github.Repository) {
 	var newTopics []string
 
 	if a.isAddMode {
@@ -130,12 +130,7 @@ func (a *AppContext) updateTopicsOfRepo(repo *github.Repository) {
 		return
 	}
 
-	confirmedTopics, _, err := a.gitHub.Repositories.ReplaceAllTopics(
-		context.Background(),
-		*repo.Owner.Login,
-		*repo.Name,
-		newTopics,
-	)
+	confirmedTopics, _, err := a.gitHub.Repositories.ReplaceAllTopics(ctx, *repo.Owner.Login, *repo.Name, newTopics)
 	if err != nil {
 		log.Printf("%q failed: %s", *repo.Name, err)
 	} else {
@@ -213,8 +208,10 @@ func main() {
 		affectedTopic:   "hacktoberfest",
 	}
 
-	repos := appContext.getRepos()
+	ctx := context.Background()
+
+	repos := appContext.getRepos(ctx)
 	log.Printf("Changing the topic %q for the following repos: %s", appContext.affectedTopic, strings.Join(mapRepoNames(repos), " "))
 
-	appContext.updateTopicsOfRepos(repos)
+	appContext.updateTopicsOfRepos(ctx, repos)
 }
